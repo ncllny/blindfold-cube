@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -72,7 +72,7 @@
   .row{display:flex;gap:16px;align-items:center;flex-wrap:wrap;}
   .row.between{justify-content:space-between;}
 
-  .config-group{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);font-weight:600;}
+  .config-group{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);font-weight:600;}
 
   .segmented{display:inline-flex;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:3px;gap:2px;}
   .segmented button{
@@ -109,11 +109,11 @@
   .stage{margin-top:22px;display:flex;flex-direction:column;align-items:center;gap:14px;}
 
   .letter-card{
-    width:100%;max-width:340px;aspect-ratio:1.5;border-radius:20px;
-    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
-    background:var(--surface-2);border:1px solid var(--border);position:relative;
+    width:100%;max-width:440px;min-height:140px;border-radius:20px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+    background:var(--surface-2);border:1px solid var(--border);position:relative;padding:24px 20px;
     transition:box-shadow .2s, border-color .2s;
-    touch-action:none; /* Prevent double-tap zoom or scrolling actions when interacting with card */
+    touch-action:none;
     user-select:none;
     -webkit-user-select:none;
   }
@@ -121,11 +121,11 @@
     position:absolute;top:14px;left:14px;font-size:10.5px;letter-spacing:0.12em;text-transform:uppercase;
     color:var(--muted);font-weight:700;padding:3px 8px;border:1px solid var(--border);border-radius:20px;
   }
-  .letter-card .buffer-flag{
-    position:absolute;top:14px;right:14px;font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;
-    color:#151109;font-weight:700;padding:3px 8px;background:var(--gold);border-radius:20px;display:none;
-  }
-  .letter-card .glyph{font-family:'JetBrains Mono',monospace;font-size:64px;font-weight:700;line-height:1;color:var(--text);letter-spacing:2px;text-align:center;word-break:break-all;padding:0 20px;}
+  .letter-card .glyph{font-family:'JetBrains Mono',monospace;font-size:48px;font-weight:700;line-height:1.2;color:var(--text);letter-spacing:1px;text-align:center;word-break:break-all;width:100%;}
+  .letter-card .glyph .mixed-label{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;font-family:'Inter',sans-serif;margin-bottom:4px;font-weight:600;}
+  .letter-card .glyph .mixed-val{color:var(--text);margin-bottom:12px;font-size:40px;letter-spacing:2px;}
+  .letter-card .glyph .mixed-val:last-child{margin-bottom:0;}
+  
   .letter-card.state-holding{box-shadow:0 0 0 2px rgba(255,206,84,0.35);}
   .letter-card.state-timing{box-shadow:0 0 0 2px rgba(79,191,122,0.5);}
   .letter-card.state-stopped{box-shadow:0 0 0 2px rgba(255,206,84,0.6);}
@@ -138,12 +138,15 @@
   .timer.good{color:var(--good);}
 
   .answer{
-    width:100%;max-width:420px;border:1px dashed var(--border);border-radius:12px;padding:14px 16px;
+    width:100%;max-width:440px;border:1px dashed var(--border);border-radius:12px;padding:14px 16px;
     text-align:center;background:var(--surface-2);display:none;
   }
   .answer.show{display:block;}
-  .answer .label{font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:6px;}
-  .answer .moves{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:600;color:var(--gold);line-height:1.5;text-align:left;display:inline-block;width:100%;max-width:280px;}
+  .answer .label{font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:8px;}
+  .answer .moves-section{text-align:left;margin-bottom:12px;}
+  .answer .moves-section:last-child{margin-bottom:0;}
+  .answer .moves-heading{font-size:12px;color:var(--muted);font-weight:700;margin-bottom:4px;text-transform:uppercase;}
+  .answer .moves{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:600;color:var(--gold);line-height:1.5;display:block;}
 
   .actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
   .btn{
@@ -167,10 +170,24 @@
   .cell{
     display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;
     font-size:11px;font-weight:700;border-radius:3px;color:rgba(0,0,0,0.72);position:relative;
-    transition:box-shadow .2s, transform .2s;
   }
-  .cell.center{font-size:7px;font-weight:800;text-transform:uppercase;letter-spacing:0.03em;filter:brightness(0.82);}
-  .cell.target{box-shadow:0 0 0 2px #fff, 0 0 12px 2px var(--gold);transform:scale(1.12);z-index:2;}
+  .cell.center{font-size:7px;font-weight:800;text-transform:uppercase;letter-spacing:0.03em;filter:brightness(0.82);z-index:1;}
+  
+  /* Dynamic target visualization configuration */
+  .cell.target{z-index:2;}
+  
+  /* Standard Edges / Corners modes layout highlight styles */
+  body:not(.mode-mixed) .cell.target {
+    box-shadow: 0 0 0 2px #fff, 0 0 12px 2px var(--gold);
+    transform: scale(1.12);
+  }
+  
+  /* Mixed Mode stripping: completely eliminates target distinction overrides */
+  body.mode-mixed .cell.target {
+    box-shadow: none;
+    transform: none;
+  }
+
   .cell.buffer-cell{opacity:0.35;}
   .cell.empty{background:transparent !important;}
 
@@ -190,6 +207,7 @@
   .tag{font-size:10px;text-transform:uppercase;font-weight:700;padding:2px 7px;border-radius:20px;letter-spacing:0.04em;}
   .tag.edge{background:rgba(47,168,79,0.14);color:#67d98a;}
   .tag.corner{background:rgba(255,138,30,0.14);color:#ffab5c;}
+  .tag.mixed{background:rgba(255,206,84,0.14);color:var(--gold);}
   .del-btn{background:none;border:none;color:var(--muted-2);cursor:pointer;font-size:15px;padding:2px 6px;}
   .del-btn:hover{color:#ff8080;}
   .empty-state{text-align:center;color:var(--muted-2);padding:40px 10px;font-size:13px;}
@@ -204,12 +222,12 @@
 
   @media (max-width:480px){
     .cube-net{grid-template-columns:repeat(12, 20px);grid-template-rows:repeat(9, 20px);}
-    .letter-card .glyph{font-size:44px;}
+    .letter-card .glyph{font-size:36px;}
     .timer{font-size:34px;}
   }
 </style>
 </head>
-<body>
+<body class="mode-edge">
 <div id="app">
 
   <header>
@@ -228,7 +246,6 @@
     </nav>
   </header>
 
-  <!-- Global Firebase Status Bar -->
   <div class="db-status-bar">
     <span class="conn-dot" id="connDot"></span>
     <span id="connText">Connecting to database...</span>
@@ -242,14 +259,36 @@
           <div class="segmented" id="modeSeg">
             <button data-mode="edge" class="active">Edges</button>
             <button data-mode="corner">Corners</button>
+            <button data-mode="mixed">Mixed</button>
           </div>
 
-          <div class="config-group">
-            <span>Characters:</span>
+          <!-- Stepper for standard Edge/Corner Modes -->
+          <div class="config-group" id="singleConfigGroup">
+            <span>Swaps:</span>
             <div class="stepper-input">
               <button id="decLenBtn">−</button>
               <span class="val" id="lenVal">1</span>
               <button id="incLenBtn">+</button>
+            </div>
+          </div>
+
+          <!-- Dual Steppers for Mixed Mode -->
+          <div class="row" id="mixedConfigGroup" style="display: none; gap: 12px;">
+            <div class="config-group">
+              <span>Edges:</span>
+              <div class="stepper-input">
+                <button id="decEdgeBtn">−</button>
+                <span class="val" id="edgeVal">1</span>
+                <button id="incEdgeBtn">+</button>
+              </div>
+            </div>
+            <div class="config-group">
+              <span>Corners:</span>
+              <div class="stepper-input">
+                <button id="decCornerBtn">−</button>
+                <span class="val" id="cornerVal">1</span>
+                <button id="incCornerBtn">+</button>
+              </div>
             </div>
           </div>
         </div>
@@ -264,8 +303,7 @@
       <div class="stage">
         <div class="letter-card state-ready" id="letterCard">
           <span class="type-tag" id="typeTag">EDGE</span>
-          <span class="buffer-flag" id="bufferFlag">buffer</span>
-          <span class="glyph" id="glyph">–</span>
+          <div class="glyph" id="glyph">–</div>
         </div>
 
         <div class="timer dim" id="timerDisplay">0.00</div>
@@ -277,7 +315,7 @@
 
         <div class="answer" id="answerBox">
           <div class="label">Setup moves</div>
-          <div class="moves" id="answerMoves">–</div>
+          <div id="answerMovesContainer"></div>
         </div>
 
         <div class="actions">
@@ -340,27 +378,19 @@
   const EDGE_POOL = ALPHABET.filter(l => !EDGE_BUFFERS.includes(l));
   const CORNER_POOL = ALPHABET.filter(l => !CORNER_BUFFERS.includes(l));
 
-  function getPosition(letter, type){
-    const idx = ALPHABET.indexOf(letter);
-    if(idx === -1) return null;
-    const faceIdx = Math.floor(idx/4);
-    const within = idx % 4;
-    const face = FACE_ORDER[faceIdx];
-    const rc = type === 'edge'
-      ? [[0,1],[1,2],[2,1],[1,0]][within]
-      : [[0,0],[0,2],[2,2],[2,0]][within];
-    return {face, row: rc[0], col: rc[1]};
-  }
-
   // ---------- state ----------
-  let mode = 'edge';              // edge | corner
-  let charLength = 1;             // 1 to length of the pool
+  let mode = 'edge';              
+  let charLength = 1;             
+  let edgeLength = 1;             
+  let cornerLength = 1;           
   let showCube = true;
-  let currentLetters = [];        // array of target characters
-  let roundState = 'ready';       // ready | holding | timing | stopped
+  
+  let currentEdges = [];          
+  let currentCorners = [];        
+  let roundState = 'ready';       
   let startTime = null;
   let tickHandle = null;
-  let history = {};                // pushId -> record
+  let history = {};                
   let connOk = null;
 
   // ---------- elements ----------
@@ -368,20 +398,27 @@
     tabs: document.querySelectorAll('nav.tabs button'),
     sections: {trainer: document.getElementById('trainer'), history: document.getElementById('history')},
     modeSeg: document.getElementById('modeSeg'),
+    singleConfigGroup: document.getElementById('singleConfigGroup'),
+    mixedConfigGroup: document.getElementById('mixedConfigGroup'),
     decLenBtn: document.getElementById('decLenBtn'),
     incLenBtn: document.getElementById('incLenBtn'),
     lenVal: document.getElementById('lenVal'),
+    decEdgeBtn: document.getElementById('decEdgeBtn'),
+    incEdgeBtn: document.getElementById('incEdgeBtn'),
+    edgeVal: document.getElementById('edgeVal'),
+    decCornerBtn: document.getElementById('decCornerBtn'),
+    incCornerBtn: document.getElementById('incCornerBtn'),
+    cornerVal: document.getElementById('cornerVal'),
     showCubeToggle: document.getElementById('showCubeToggle'),
     letterCard: document.getElementById('letterCard'),
     typeTag: document.getElementById('typeTag'),
-    bufferFlag: document.getElementById('bufferFlag'),
     glyph: document.getElementById('glyph'),
     timerDisplay: document.getElementById('timerDisplay'),
     statusLine: document.getElementById('statusLine'),
     cubeWrap: document.getElementById('cubeWrap'),
     cubeNet: document.getElementById('cubeNet'),
     answerBox: document.getElementById('answerBox'),
-    answerMoves: document.getElementById('answerMoves'),
+    answerMovesContainer: document.getElementById('answerMovesContainer'),
     dontRememberBtn: document.getElementById('dontRememberBtn'),
     skipBtn: document.getElementById('skipBtn'),
     historyTableWrap: document.getElementById('historyTableWrap'),
@@ -403,60 +440,97 @@
     if (btn.dataset.tab === 'history') renderHistory();
   }));
 
-  // ---------- config selections ----------
+  // ---------- config adjustments ----------
   el.modeSeg.addEventListener('click', (e) => {
     const btn = e.target.closest('button[data-mode]');
     if (!btn) return;
     el.modeSeg.querySelectorAll('button').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     mode = btn.dataset.mode;
+
+    document.body.className = 'mode-' + mode;
     
-    const maxPool = mode === 'edge' ? EDGE_POOL.length : CORNER_POOL.length;
-    if (charLength > maxPool) charLength = maxPool;
-    el.lenVal.textContent = charLength;
+    if(mode === 'mixed'){
+      el.singleConfigGroup.style.display = 'none';
+      el.mixedConfigGroup.style.display = 'flex';
+    } else {
+      el.singleConfigGroup.style.display = 'flex';
+      el.mixedConfigGroup.style.display = 'none';
+      const maxPool = mode === 'edge' ? EDGE_POOL.length : CORNER_POOL.length;
+      if (charLength > maxPool) charLength = maxPool;
+      el.lenVal.textContent = charLength;
+    }
     newRound();
   });
 
-  el.decLenBtn.addEventListener('click', () => {
-    if (charLength <= 1) return;
-    charLength--;
-    el.lenVal.textContent = charLength;
-    newRound();
-  });
-
+  // Standard Steppers
+  el.decLenBtn.addEventListener('click', () => { if (charLength <= 1) return; charLength--; el.lenVal.textContent = charLength; newRound(); });
   el.incLenBtn.addEventListener('click', () => {
     const maxPool = mode === 'edge' ? EDGE_POOL.length : CORNER_POOL.length;
     if (charLength >= maxPool) return;
-    charLength++;
-    el.lenVal.textContent = charLength;
-    newRound();
+    charLength++; el.lenVal.textContent = charLength; newRound();
   });
+
+  // Mixed Edge Steppers
+  el.decEdgeBtn.addEventListener('click', () => { if (edgeLength <= 0) return; edgeLength--; el.edgeVal.textContent = edgeLength; newRound(); });
+  el.incEdgeBtn.addEventListener('click', () => { if (edgeLength >= EDGE_POOL.length) return; edgeLength++; el.edgeVal.textContent = edgeLength; newRound(); });
+
+  // Mixed Corner Steppers
+  el.decCornerBtn.addEventListener('click', () => { if (cornerLength <= 0) return; cornerLength--; el.cornerVal.textContent = cornerLength; newRound(); });
+  el.incCornerBtn.addEventListener('click', () => { if (cornerLength >= CORNER_POOL.length) return; cornerLength++; el.cornerVal.textContent = cornerLength; newRound(); });
 
   el.showCubeToggle.addEventListener('change', () => {
     showCube = el.showCubeToggle.checked;
-    el.cubeWrap.style.display = showCube ? 'flex' : 'none';
     renderCube();
   });
 
   // ---------- round lifecycle ----------
-  function newRound(){
-    stopTicking();
-    const pool = mode === 'edge' ? EDGE_POOL : CORNER_POOL;
-    
-    currentLetters = [];
+  function generateNoRepeatSequence(pool, count) {
     let poolCopy = [...pool];
-    for(let i = 0; i < charLength; i++) {
+    let selected = [];
+    for(let i = 0; i < count; i++) {
       if (poolCopy.length === 0) break;
       let randIdx = Math.floor(Math.random() * poolCopy.length);
-      currentLetters.push(poolCopy.splice(randIdx, 1)[0]);
+      selected.push(poolCopy.splice(randIdx, 1)[0]);
+    }
+    return selected;
+  }
+
+  function newRound(){
+    stopTicking();
+    el.answerBox.classList.remove('show');
+    
+    if (mode === 'mixed') {
+      currentEdges = generateNoRepeatSequence(EDGE_POOL, edgeLength);
+      currentCorners = generateNoRepeatSequence(CORNER_POOL, cornerLength);
+      
+      el.typeTag.textContent = "MIXED";
+      
+      let edgeString = currentEdges.length > 0 ? currentEdges.join('') : '–';
+      let cornerString = currentCorners.length > 0 ? currentCorners.join('') : '–';
+      
+      el.glyph.innerHTML = `
+        <div class="mixed-label">Edges</div>
+        <div class="mixed-val">${edgeString}</div>
+        <div class="mixed-label">Corners</div>
+        <div class="mixed-val">${cornerString}</div>
+      `;
+    } else {
+      const pool = mode === 'edge' ? EDGE_POOL : CORNER_POOL;
+      const sequence = generateNoRepeatSequence(pool, charLength);
+      if (mode === 'edge') {
+        currentEdges = sequence;
+        currentCorners = [];
+      } else {
+        currentEdges = [];
+        currentCorners = sequence;
+      }
+      el.typeTag.textContent = mode.toUpperCase();
+      el.glyph.textContent = sequence.join('');
     }
 
     roundState = 'ready';
     startTime = null;
-    el.glyph.textContent = currentLetters.join('');
-    el.typeTag.textContent = mode.toUpperCase();
-    el.bufferFlag.style.display = 'none';
-    el.answerBox.classList.remove('show');
     el.timerDisplay.textContent = '0.00';
     el.timerDisplay.className = 'timer dim';
     setCardState('ready');
@@ -510,13 +584,53 @@
     setStatus(gaveUp
       ? 'Recorded as <b>skipped</b> — hold space or target card to reset'
       : 'Time <b>' + elapsed.toFixed(2) + 's</b> — hold space or target card to reset');
-    saveRecord(currentLetters.join(''), mode, elapsed, gaveUp);
+    
+    let savedLabel = mode === 'mixed' 
+      ? `E:${currentEdges.join('')||'-'} C:${currentCorners.join('')||'-'}`
+      : (mode === 'edge' ? currentEdges.join('') : currentCorners.join(''));
+      
+    saveRecord(savedLabel, mode, elapsed, gaveUp);
   }
 
   function revealAnswer(){
-    const dict = mode === 'edge' ? EDGE_MOVES : CORNER_MOVES;
-    const movesList = currentLetters.map(letter => `<b>${letter}</b>: ${dict[letter] || '–'}`);
-    el.answerMoves.innerHTML = movesList.join('<br>');
+    el.answerMovesContainer.innerHTML = '';
+    
+    if (mode === 'edge' || mode === 'mixed') {
+      if (currentEdges.length > 0) {
+        let section = document.createElement('div');
+        section.className = 'moves-section';
+        let heading = document.createElement('div');
+        heading.className = 'moves-heading';
+        heading.textContent = 'Edges';
+        let moves = document.createElement('div');
+        moves.className = 'moves';
+        moves.innerHTML = currentEdges.map(l => `<b>${l}</b>: ${EDGE_MOVES[l] || '–'}`).join('<br>');
+        section.appendChild(heading);
+        section.appendChild(moves);
+        el.answerMovesContainer.appendChild(section);
+      }
+    }
+    
+    if (mode === 'corner' || mode === 'mixed') {
+      if (currentCorners.length > 0) {
+        let section = document.createElement('div');
+        section.className = 'moves-section';
+        let heading = document.createElement('div');
+        heading.className = 'moves-heading';
+        heading.textContent = 'Corners';
+        let moves = document.createElement('div');
+        moves.className = 'moves';
+        moves.innerHTML = currentCorners.map(l => `<b>${l}</b>: ${CORNER_MOVES[l] || '–'}`).join('<br>');
+        section.appendChild(heading);
+        section.appendChild(moves);
+        el.answerMovesContainer.appendChild(section);
+      }
+    }
+
+    if(el.answerMovesContainer.innerHTML === '') {
+      el.answerMovesContainer.innerHTML = '<div class="moves">—</div>';
+    }
+
     el.answerBox.classList.add('show');
 
     if (roundState === 'timing') {
@@ -526,20 +640,20 @@
       roundState = 'stopped';
       setCardState('stopped');
       setStatus('Ready for next set');
-      saveRecord(currentLetters.join(''), mode, null, true);
+      let savedLabel = mode === 'mixed' 
+        ? `E:${currentEdges.join('')||'-'} C:${currentCorners.join('')||'-'}`
+        : (mode === 'edge' ? currentEdges.join('') : currentCorners.join(''));
+      saveRecord(savedLabel, mode, null, true);
     }
   }
 
   el.dontRememberBtn.addEventListener('click', (e) => { e.stopPropagation(); revealAnswer(); });
   el.skipBtn.addEventListener('click', (e) => { e.stopPropagation(); newRound(); });
 
-  // ---------- input events (keyboard + touch) ----------
-  
-  // KEYBOARD
+  // ---------- input events ----------
   document.addEventListener('keydown', (e) => {
     if (!el.sections.trainer.classList.contains('active')) return;
     if (e.repeat) { if (e.code === 'Space') e.preventDefault(); return; }
-
     if (e.code === 'Space') {
       e.preventDefault();
       if (roundState === 'timing') { stopTiming(false); return; }
@@ -551,43 +665,26 @@
 
   document.addEventListener('keyup', (e) => {
     if (!el.sections.trainer.classList.contains('active')) return;
-    if (e.code === 'Space') {
-      e.preventDefault();
-      startTiming();
-    }
+    if (e.code === 'Space') { e.preventDefault(); startTiming(); }
   });
 
-  // TOUCH / MOUSE (for letterCard interactions)
   el.letterCard.addEventListener('touchstart', (e) => {
     if (!el.sections.trainer.classList.contains('active')) return;
     e.preventDefault(); 
-    if (roundState === 'timing') {
-      stopTiming(false);
-    } else {
-      startHold();
-    }
+    if (roundState === 'timing') stopTiming(false); else startHold();
   }, { passive: false });
 
   el.letterCard.addEventListener('touchend', (e) => {
     if (!el.sections.trainer.classList.contains('active')) return;
     e.preventDefault();
-    if (roundState === 'holding') {
-      startTiming();
-    }
+    if (roundState === 'holding') startTiming();
   }, { passive: false });
 
-  // Global screen touch listener to trap/stop timing run when clicking background space on portable displays
   document.addEventListener('touchstart', (e) => {
     if (!el.sections.trainer.classList.contains('active')) return;
-    // Don't intercept clicks dedicated explicitly to settings toggles or functional application buttons
     if (e.target.closest('button') || e.target.closest('input') || e.target.closest('label') || e.target.closest('nav')) return;
-    
-    if (roundState === 'timing') {
-      e.preventDefault();
-      stopTiming(false);
-    }
+    if (roundState === 'timing') { e.preventDefault(); stopTiming(false); }
   }, { passive: false });
-
 
   // ---------- cube rendering ----------
   function buildCellIndexMaps(){
@@ -619,23 +716,17 @@
             div.textContent = FACE_LABEL[face];
           } else {
             const key = r + ',' + c;
-            let letter = null, cellType = null;
-            if (IDX_MAPS.edge[key] !== undefined && mode === 'edge'){
-              letter = ALPHABET[faceIdx*4 + IDX_MAPS.edge[key]];
-              cellType = 'edge';
-            } else if (IDX_MAPS.corner[key] !== undefined && mode === 'corner'){
-              letter = ALPHABET[faceIdx*4 + IDX_MAPS.corner[key]];
-              cellType = 'corner';
-            }
-            if (letter){
-              div.textContent = letter;
-              const isBuffer = (cellType === 'edge' && EDGE_BUFFERS.includes(letter)) ||
-                                (cellType === 'corner' && CORNER_BUFFERS.includes(letter));
-              if (isBuffer) div.classList.add('buffer-cell');
-              
-              if (currentLetters.includes(letter) && cellType === mode){
-                div.classList.add('target');
-              }
+            let edgeLetter = IDX_MAPS.edge[key] !== undefined ? ALPHABET[faceIdx*4 + IDX_MAPS.edge[key]] : null;
+            let cornerLetter = IDX_MAPS.corner[key] !== undefined ? ALPHABET[faceIdx*4 + IDX_MAPS.corner[key]] : null;
+            
+            if (edgeLetter) {
+              div.textContent = edgeLetter;
+              if (EDGE_BUFFERS.includes(edgeLetter)) div.classList.add('buffer-cell');
+              if (currentEdges.includes(edgeLetter)) div.classList.add('target');
+            } else if (cornerLetter) {
+              div.textContent = cornerLetter;
+              if (CORNER_BUFFERS.includes(cornerLetter)) div.classList.add('buffer-cell');
+              if (currentCorners.includes(cornerLetter)) div.classList.add('target');
             } else {
               div.classList.add('empty');
             }
@@ -646,7 +737,7 @@
     });
   }
 
-  // ---------- firebase (REST) ----------
+  // ---------- firebase ----------
   function saveRecord(letter, type, seconds, gaveUp){
     const record = {
       letter, type,
@@ -682,20 +773,15 @@
   function updateConn(ok){
     connOk = ok;
     el.connDot.className = 'conn-dot ' + (ok ? 'ok' : 'err');
-    el.connText.textContent = ok
-      ? 'Connected to Firebase instance. Synchronization active.'
-      : "Database connection failed. Sync suspended.";
+    el.connText.textContent = ok ? 'Connected to Firebase instance. Synchronization active.' : "Database connection failed. Sync suspended.";
   }
 
-  // ---------- history rendering ----------
   function renderHistoryIfActive(){
     if (el.sections.history.classList.contains('active')) renderHistory();
   }
 
   function renderHistory(){
-    const rows = Object.entries(history)
-      .sort((a,b) => (b[1].ts||0) - (a[1].ts||0));
-
+    const rows = Object.entries(history).sort((a,b) => (b[1].ts||0) - (a[1].ts||0));
     el.statCount.textContent = rows.length;
     const timed = rows.filter(([,r]) => typeof r.time === 'number');
     if (timed.length){
@@ -704,8 +790,7 @@
       el.statAvg.textContent = avg.toFixed(2) + 's';
       el.statBest.textContent = best.toFixed(2) + 's';
     } else {
-      el.statAvg.textContent = '–';
-      el.statBest.textContent = '–';
+      el.statAvg.textContent = '–'; el.statBest.textContent = '–';
     }
 
     if (!rows.length){
@@ -717,8 +802,7 @@
     rows.forEach(([id, r]) => {
       const d = new Date(r.ts);
       const when = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-      const timeStr = r.gaveUp ? (typeof r.time === 'number' ? r.time.toFixed(2) + 's (skip)' : 'skipped')
-                                : (typeof r.time === 'number' ? r.time.toFixed(2) + 's' : '–');
+      const timeStr = r.gaveUp ? (typeof r.time === 'number' ? r.time.toFixed(2) + 's (skip)' : 'skipped') : (typeof r.time === 'number' ? r.time.toFixed(2) + 's' : '–');
       html += '<tr>' +
         '<td class="letter-cell">' + r.letter + '</td>' +
         '<td><span class="tag ' + r.type + '">' + r.type + '</span></td>' +
@@ -740,13 +824,10 @@
     if (confirm('Permanently delete all saved logs? This step cannot be undone.')) deleteAll();
   });
 
-  // ---------- toast ----------
   let toastTimer = null;
   function showToast(msg){
-    el.toast.textContent = msg;
-    el.toast.classList.add('show');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => el.toast.classList.remove('show'), 2600);
+    el.toast.textContent = msg; el.toast.classList.add('show');
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => el.toast.classList.remove('show'), 2600);
   }
 
   // ---------- init ----------
