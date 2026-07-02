@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Letter Drill — Blind Cube Trainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0b0c10;
+    --surface: #14161c;
+    --surface-2: #1b1e26;
+    --border: #262a35;
+    --text: #eceef2;
+    --muted: #888d9c;
+    --muted-2: #5c6070;
+    --gold: #ffce54;
+    --good: #4fbf7a;
+
+    --c-u: #f2f0e6;
+    --c-l: #ff8a1e;
+    --c-f: #2fa84f;
+    --c-r: #e13a30;
+    --c-b: #2a5fd6;
+    --c-d: #f3d413;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(1200px 600px at 50% -10%, rgba(255,206,84,0.06), transparent 60%),
+      var(--bg);
+    color:var(--text);
+    font-family:'Inter',system-ui,sans-serif;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  #app{max-width:880px;margin:0 auto;padding:20px 18px 60px;}
+
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap;}
+  .brand{display:flex;align-items:baseline;gap:10px;}
+  .brand .swatches{display:inline-flex;gap:3px;}
+  .brand .swatches span{width:9px;height:9px;border-radius:2px;display:inline-block;}
+  .brand h1{font-size:17px;letter-spacing:0.02em;margin:0;font-weight:800;}
+  .brand small{color:var(--muted);font-size:12px;font-weight:500;}
+
+  nav.tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);padding:4px;border-radius:10px;}
+  nav.tabs button{
+    background:transparent;border:none;color:var(--muted);font-family:inherit;font-size:13px;font-weight:600;
+    padding:7px 14px;border-radius:7px;cursor:pointer;transition:all .15s ease;
+  }
+  nav.tabs button.active{background:var(--surface-2);color:var(--text);}
+  nav.tabs button:hover:not(.active){color:var(--text);}
+
+  .db-status-bar{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:6px 12px;
+    font-size:12px;
+    color:var(--muted);
+    display:flex;
+    align-items:center;
+    margin-bottom:22px;
+  }
+
+  section{display:none;}
+  section.active{display:block;}
+
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;}
+  .row{display:flex;gap:16px;align-items:center;flex-wrap:wrap;}
+  .row.between{justify-content:space-between;}
+
+  .config-group{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);font-weight:600;}
+
+  .segmented{display:inline-flex;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:3px;gap:2px;}
+  .segmented button{
+    background:transparent;border:none;color:var(--muted);font-family:inherit;font-size:12.5px;font-weight:600;
+    padding:6px 12px;border-radius:7px;cursor:pointer;transition:all .15s ease;
+  }
+  .segmented button.active{background:var(--gold);color:#151109;}
+
+  .stepper-input{
+    display:inline-flex;
+    align-items:center;
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:3px;
+  }
+  .stepper-input button{
+    background:transparent;border:none;color:var(--text);font-size:16px;font-weight:700;
+    width:28px;height:28px;cursor:pointer;border-radius:6px;display:flex;align-items:center;justify-content:center;
+  }
+  .stepper-input button:hover{background:var(--border);}
+  .stepper-input .val{
+    font-family:'JetBrains Mono',monospace;color:var(--gold);font-weight:700;font-size:14px;
+    width:32px;text-align:center;
+  }
+
+  .switch{display:inline-flex;align-items:center;gap:8px;cursor:pointer;user-select:none;font-size:12.5px;color:var(--muted);font-weight:600;}
+  .switch .track{width:34px;height:19px;border-radius:20px;background:var(--surface-2);border:1px solid var(--border);position:relative;transition:background .15s;flex-shrink:0;}
+  .switch .track::after{content:'';position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:var(--muted-2);transition:transform .15s, background .15s;}
+  .switch input{display:none;}
+  .switch input:checked + .track{background:rgba(255,206,84,0.18);border-color:var(--gold);}
+  .switch input:checked + .track::after{transform:translateX(15px);background:var(--gold);}
+
+  .stage{margin-top:22px;display:flex;flex-direction:column;align-items:center;gap:14px;}
+
+  .letter-card{
+    width:100%;max-width:340px;aspect-ratio:1.5;border-radius:20px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+    background:var(--surface-2);border:1px solid var(--border);position:relative;
+    transition:box-shadow .2s, border-color .2s;
+    touch-action:none; /* Prevent double-tap zoom or scrolling actions when interacting with card */
+    user-select:none;
+    -webkit-user-select:none;
+  }
+  .letter-card .type-tag{
+    position:absolute;top:14px;left:14px;font-size:10.5px;letter-spacing:0.12em;text-transform:uppercase;
+    color:var(--muted);font-weight:700;padding:3px 8px;border:1px solid var(--border);border-radius:20px;
+  }
+  .letter-card .buffer-flag{
+    position:absolute;top:14px;right:14px;font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;
+    color:#151109;font-weight:700;padding:3px 8px;background:var(--gold);border-radius:20px;display:none;
+  }
+  .letter-card .glyph{font-family:'JetBrains Mono',monospace;font-size:64px;font-weight:700;line-height:1;color:var(--text);letter-spacing:2px;text-align:center;word-break:break-all;padding:0 20px;}
+  .letter-card.state-holding{box-shadow:0 0 0 2px rgba(255,206,84,0.35);}
+  .letter-card.state-timing{box-shadow:0 0 0 2px rgba(79,191,122,0.5);}
+  .letter-card.state-stopped{box-shadow:0 0 0 2px rgba(255,206,84,0.6);}
+
+  .status-line{font-size:13px;color:var(--muted);font-weight:500;min-height:18px;text-align:center;}
+  .status-line b{color:var(--text);}
+
+  .timer{font-family:'JetBrains Mono',monospace;font-size:44px;font-weight:600;letter-spacing:0.01em;color:var(--text);}
+  .timer.dim{color:var(--muted-2);}
+  .timer.good{color:var(--good);}
+
+  .answer{
+    width:100%;max-width:420px;border:1px dashed var(--border);border-radius:12px;padding:14px 16px;
+    text-align:center;background:var(--surface-2);display:none;
+  }
+  .answer.show{display:block;}
+  .answer .label{font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:6px;}
+  .answer .moves{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:600;color:var(--gold);line-height:1.5;text-align:left;display:inline-block;width:100%;max-width:280px;}
+
+  .actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+  .btn{
+    font-family:inherit;font-size:13px;font-weight:700;padding:10px 18px;border-radius:10px;cursor:pointer;
+    border:1px solid var(--border);background:var(--surface-2);color:var(--text);transition:all .15s ease;
+  }
+  .btn:hover{border-color:var(--muted-2);}
+  .btn.ghost{background:transparent;}
+  .btn.warn{color:#ffb4b4;border-color:rgba(255,120,120,0.3);}
+  .btn.warn:hover{background:rgba(255,80,80,0.08);}
+
+  .hint{font-size:12px;color:var(--muted-2);text-align:center;max-width:420px;line-height:1.5;}
+  .hint kbd{font-family:'JetBrains Mono',monospace;background:var(--surface-2);border:1px solid var(--border);
+    border-radius:5px;padding:1px 6px;color:var(--text);}
+
+  /* cube net */
+  .cube-wrap{display:flex;justify-content:center;margin-top:6px;}
+  .cube-net{
+    display:grid;grid-template-columns:repeat(12, 26px);grid-template-rows:repeat(9, 26px);gap:2px;
+  }
+  .cell{
+    display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;
+    font-size:11px;font-weight:700;border-radius:3px;color:rgba(0,0,0,0.72);position:relative;
+    transition:box-shadow .2s, transform .2s;
+  }
+  .cell.center{font-size:7px;font-weight:800;text-transform:uppercase;letter-spacing:0.03em;filter:brightness(0.82);}
+  .cell.target{box-shadow:0 0 0 2px #fff, 0 0 12px 2px var(--gold);transform:scale(1.12);z-index:2;}
+  .cell.buffer-cell{opacity:0.35;}
+  .cell.empty{background:transparent !important;}
+
+  /* history */
+  .stats-row{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+  .stat{background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:12px 16px;flex:1;min-width:110px;}
+  .stat .n{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;}
+  .stat .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{text-align:left;color:var(--muted);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;
+    padding:8px 10px;border-bottom:1px solid var(--border);}
+  td{padding:9px 10px;border-bottom:1px solid var(--border);}
+  tr:last-child td{border-bottom:none;}
+  td.letter-cell{font-family:'JetBrains Mono',monospace;font-weight:700;}
+  td.time-cell{font-family:'JetBrains Mono',monospace;color:var(--muted);}
+  .tag{font-size:10px;text-transform:uppercase;font-weight:700;padding:2px 7px;border-radius:20px;letter-spacing:0.04em;}
+  .tag.edge{background:rgba(47,168,79,0.14);color:#67d98a;}
+  .tag.corner{background:rgba(255,138,30,0.14);color:#ffab5c;}
+  .del-btn{background:none;border:none;color:var(--muted-2);cursor:pointer;font-size:15px;padding:2px 6px;}
+  .del-btn:hover{color:#ff8080;}
+  .empty-state{text-align:center;color:var(--muted-2);padding:40px 10px;font-size:13px;}
+
+  .conn-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;background:var(--muted-2);flex-shrink:0;}
+  .conn-dot.ok{background:var(--good);}
+  .conn-dot.err{background:#ff6b6b;}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--surface-2);
+    border:1px solid var(--border);padding:10px 18px;border-radius:10px;font-size:13px;font-weight:600;
+    opacity:0;pointer-events:none;transition:opacity .25s, transform .25s;z-index:50;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(-6px);}
+
+  @media (max-width:480px){
+    .cube-net{grid-template-columns:repeat(12, 20px);grid-template-rows:repeat(9, 20px);}
+    .letter-card .glyph{font-size:44px;}
+    .timer{font-size:34px;}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header>
+    <div class="brand">
+      <span class="swatches">
+        <span style="background:var(--c-u)"></span><span style="background:var(--c-l)"></span>
+        <span style="background:var(--c-f)"></span><span style="background:var(--c-r)"></span>
+        <span style="background:var(--c-b)"></span><span style="background:var(--c-d)"></span>
+      </span>
+      <h1>Letter Drill</h1>
+      <small>blind cube memo trainer</small>
+    </div>
+    <nav class="tabs">
+      <button data-tab="trainer" class="active">Trainer</button>
+      <button data-tab="history">History</button>
+    </nav>
+  </header>
+
+  <!-- Global Firebase Status Bar -->
+  <div class="db-status-bar">
+    <span class="conn-dot" id="connDot"></span>
+    <span id="connText">Connecting to database...</span>
+  </div>
+
+  <!-- TRAINER -->
+  <section id="trainer" class="active">
+    <div class="panel">
+      <div class="row between">
+        <div class="row">
+          <div class="segmented" id="modeSeg">
+            <button data-mode="edge" class="active">Edges</button>
+            <button data-mode="corner">Corners</button>
+          </div>
+
+          <div class="config-group">
+            <span>Characters:</span>
+            <div class="stepper-input">
+              <button id="decLenBtn">−</button>
+              <span class="val" id="lenVal">1</span>
+              <button id="incLenBtn">+</button>
+            </div>
+          </div>
+        </div>
+
+        <label class="switch">
+          <input type="checkbox" id="showCubeToggle" checked>
+          <span class="track"></span>
+          Show cube
+        </label>
+      </div>
+
+      <div class="stage">
+        <div class="letter-card state-ready" id="letterCard">
+          <span class="type-tag" id="typeTag">EDGE</span>
+          <span class="buffer-flag" id="bufferFlag">buffer</span>
+          <span class="glyph" id="glyph">–</span>
+        </div>
+
+        <div class="timer dim" id="timerDisplay">0.00</div>
+        <div class="status-line" id="statusLine">Hold <b>Space</b> or <b>Press & Hold Card</b> to prepare</div>
+
+        <div class="cube-wrap" id="cubeWrap">
+          <div class="cube-net" id="cubeNet"></div>
+        </div>
+
+        <div class="answer" id="answerBox">
+          <div class="label">Setup moves</div>
+          <div class="moves" id="answerMoves">–</div>
+        </div>
+
+        <div class="actions">
+          <button class="btn" id="dontRememberBtn">I don't remember</button>
+          <button class="btn ghost" id="skipBtn">New letters</button>
+        </div>
+
+        <div class="hint">
+          Hold <kbd>Space</kbd> (or tap and hold card area) while you look at the letters, release it to start the clock,
+          then press <kbd>any key</kbd> (or tap anywhere) to stop.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HISTORY -->
+  <section id="history">
+    <div class="panel">
+      <div class="stats-row">
+        <div class="stat"><div class="n" id="statCount">0</div><div class="l">Attempts</div></div>
+        <div class="stat"><div class="n" id="statAvg">–</div><div class="l">Avg time</div></div>
+        <div class="stat"><div class="n" id="statBest">–</div><div class="l">Best time</div></div>
+      </div>
+      <div class="row between" style="margin-bottom:12px;">
+        <strong style="font-size:14px;">Recent attempts</strong>
+        <button class="btn warn" id="clearAllBtn" style="padding:6px 12px;font-size:12px;">Clear all logs</button>
+      </div>
+      <div id="historyTableWrap">
+        <div class="empty-state">No attempts yet — go do a few reps.</div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  const DB_URL = "https://blindcube-aa8ca-default-rtdb.asia-southeast1.firebasedatabase.app";
+  const RECORDS_PATH = DB_URL + "/records.json";
+
+  const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWX".split('');
+  const FACE_ORDER = ['U','L','F','R','B','D'];
+  const FACE_COLOR = {U:'var(--c-u)', L:'var(--c-l)', F:'var(--c-f)', R:'var(--c-r)', B:'var(--c-b)', D:'var(--c-d)'};
+  const FACE_LABEL = {U:'up', L:'left', F:'front', R:'right', B:'back', D:'down'};
+  const FACE_ORIGIN = {U:{r:0,c:3}, L:{r:3,c:0}, F:{r:3,c:3}, R:{r:3,c:6}, B:{r:3,c:9}, D:{r:6,c:3}};
+
+  const EDGE_MOVES = {A:"Lw2 D' L2", B:"buffer", C:"Lw2 D L2", D:"no setup moves", E:"L Dw' L", F:"Dw' L",
+    G:"L' Dw' L", H:"Dw L'", I:"Lw D' L2", J:"Dw2 L", K:"Lw D L2", L:"L'", M:"buffer", N:"Dw L",
+    O:"D2 L' Dw' L", P:"Dw' L'", Q:"Lw' D L2", R:"L", S:"Lw' D' L2", T:"Dw2 L'", U:"D' L2", V:"D2 L2",
+    W:"D L2", X:"L2"};
+
+  const CORNER_MOVES = {A:"buffer", B:"R2", C:"F2 D", D:"F2", E:"buffer", F:"F' D", G:"F'", H:"D' R",
+    I:"F R'", J:"R'", K:"F' R'", L:"F2 R'", M:"F", N:"R' F", O:"R2 F", P:"R F", Q:"R D'", R:"buffer",
+    S:"D F'", T:"R", U:"D", V:"no setup moves", W:"D'", X:"D2"};
+
+  const EDGE_BUFFERS = ['B','M'];
+  const CORNER_BUFFERS = ['A','E','R'];
+  const EDGE_POOL = ALPHABET.filter(l => !EDGE_BUFFERS.includes(l));
+  const CORNER_POOL = ALPHABET.filter(l => !CORNER_BUFFERS.includes(l));
+
+  function getPosition(letter, type){
+    const idx = ALPHABET.indexOf(letter);
+    if(idx === -1) return null;
+    const faceIdx = Math.floor(idx/4);
+    const within = idx % 4;
+    const face = FACE_ORDER[faceIdx];
+    const rc = type === 'edge'
+      ? [[0,1],[1,2],[2,1],[1,0]][within]
+      : [[0,0],[0,2],[2,2],[2,0]][within];
+    return {face, row: rc[0], col: rc[1]};
+  }
+
+  // ---------- state ----------
+  let mode = 'edge';              // edge | corner
+  let charLength = 1;             // 1 to length of the pool
+  let showCube = true;
+  let currentLetters = [];        // array of target characters
+  let roundState = 'ready';       // ready | holding | timing | stopped
+  let startTime = null;
+  let tickHandle = null;
+  let history = {};                // pushId -> record
+  let connOk = null;
+
+  // ---------- elements ----------
+  const el = {
+    tabs: document.querySelectorAll('nav.tabs button'),
+    sections: {trainer: document.getElementById('trainer'), history: document.getElementById('history')},
+    modeSeg: document.getElementById('modeSeg'),
+    decLenBtn: document.getElementById('decLenBtn'),
+    incLenBtn: document.getElementById('incLenBtn'),
+    lenVal: document.getElementById('lenVal'),
+    showCubeToggle: document.getElementById('showCubeToggle'),
+    letterCard: document.getElementById('letterCard'),
+    typeTag: document.getElementById('typeTag'),
+    bufferFlag: document.getElementById('bufferFlag'),
+    glyph: document.getElementById('glyph'),
+    timerDisplay: document.getElementById('timerDisplay'),
+    statusLine: document.getElementById('statusLine'),
+    cubeWrap: document.getElementById('cubeWrap'),
+    cubeNet: document.getElementById('cubeNet'),
+    answerBox: document.getElementById('answerBox'),
+    answerMoves: document.getElementById('answerMoves'),
+    dontRememberBtn: document.getElementById('dontRememberBtn'),
+    skipBtn: document.getElementById('skipBtn'),
+    historyTableWrap: document.getElementById('historyTableWrap'),
+    statCount: document.getElementById('statCount'),
+    statAvg: document.getElementById('statAvg'),
+    statBest: document.getElementById('statBest'),
+    clearAllBtn: document.getElementById('clearAllBtn'),
+    connDot: document.getElementById('connDot'),
+    connText: document.getElementById('connText'),
+    toast: document.getElementById('toast'),
+  };
+
+  // ---------- tabs ----------
+  el.tabs.forEach(btn => btn.addEventListener('click', () => {
+    el.tabs.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    Object.values(el.sections).forEach(s => s.classList.remove('active'));
+    el.sections[btn.dataset.tab].classList.add('active');
+    if (btn.dataset.tab === 'history') renderHistory();
+  }));
+
+  // ---------- config selections ----------
+  el.modeSeg.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-mode]');
+    if (!btn) return;
+    el.modeSeg.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    mode = btn.dataset.mode;
+    
+    const maxPool = mode === 'edge' ? EDGE_POOL.length : CORNER_POOL.length;
+    if (charLength > maxPool) charLength = maxPool;
+    el.lenVal.textContent = charLength;
+    newRound();
+  });
+
+  el.decLenBtn.addEventListener('click', () => {
+    if (charLength <= 1) return;
+    charLength--;
+    el.lenVal.textContent = charLength;
+    newRound();
+  });
+
+  el.incLenBtn.addEventListener('click', () => {
+    const maxPool = mode === 'edge' ? EDGE_POOL.length : CORNER_POOL.length;
+    if (charLength >= maxPool) return;
+    charLength++;
+    el.lenVal.textContent = charLength;
+    newRound();
+  });
+
+  el.showCubeToggle.addEventListener('change', () => {
+    showCube = el.showCubeToggle.checked;
+    el.cubeWrap.style.display = showCube ? 'flex' : 'none';
+    renderCube();
+  });
+
+  // ---------- round lifecycle ----------
+  function newRound(){
+    stopTicking();
+    const pool = mode === 'edge' ? EDGE_POOL : CORNER_POOL;
+    
+    currentLetters = [];
+    let poolCopy = [...pool];
+    for(let i = 0; i < charLength; i++) {
+      if (poolCopy.length === 0) break;
+      let randIdx = Math.floor(Math.random() * poolCopy.length);
+      currentLetters.push(poolCopy.splice(randIdx, 1)[0]);
+    }
+
+    roundState = 'ready';
+    startTime = null;
+    el.glyph.textContent = currentLetters.join('');
+    el.typeTag.textContent = mode.toUpperCase();
+    el.bufferFlag.style.display = 'none';
+    el.answerBox.classList.remove('show');
+    el.timerDisplay.textContent = '0.00';
+    el.timerDisplay.className = 'timer dim';
+    setCardState('ready');
+    setStatus('Hold <b>Space</b> or <b>Press & Hold Card</b> to prepare');
+    renderCube();
+  }
+
+  function setCardState(s){
+    el.letterCard.className = 'letter-card state-' + s;
+  }
+
+  function setStatus(html){
+    el.statusLine.innerHTML = html;
+  }
+
+  function startHold(){
+    if (roundState !== 'ready' && roundState !== 'stopped') return;
+    if (roundState === 'stopped') { newRound(); }
+    roundState = 'holding';
+    setCardState('holding');
+    setStatus('Release to start the clock');
+  }
+
+  function startTiming(){
+    if (roundState !== 'holding') return;
+    roundState = 'timing';
+    startTime = performance.now();
+    setCardState('timing');
+    setStatus('Recall moves — tap screen or press any key to stop');
+    el.timerDisplay.className = 'timer';
+    tick();
+  }
+
+  function tick(){
+    el.timerDisplay.textContent = ((performance.now() - startTime) / 1000).toFixed(2);
+    tickHandle = requestAnimationFrame(tick);
+  }
+  function stopTicking(){
+    if (tickHandle) cancelAnimationFrame(tickHandle);
+    tickHandle = null;
+  }
+
+  function stopTiming(gaveUp){
+    if (roundState !== 'timing') return;
+    const elapsed = (performance.now() - startTime) / 1000;
+    stopTicking();
+    roundState = 'stopped';
+    setCardState('stopped');
+    el.timerDisplay.textContent = elapsed.toFixed(2);
+    el.timerDisplay.className = 'timer ' + (gaveUp ? 'dim' : 'good');
+    setStatus(gaveUp
+      ? 'Recorded as <b>skipped</b> — hold space or target card to reset'
+      : 'Time <b>' + elapsed.toFixed(2) + 's</b> — hold space or target card to reset');
+    saveRecord(currentLetters.join(''), mode, elapsed, gaveUp);
+  }
+
+  function revealAnswer(){
+    const dict = mode === 'edge' ? EDGE_MOVES : CORNER_MOVES;
+    const movesList = currentLetters.map(letter => `<b>${letter}</b>: ${dict[letter] || '–'}`);
+    el.answerMoves.innerHTML = movesList.join('<br>');
+    el.answerBox.classList.add('show');
+
+    if (roundState === 'timing') {
+      stopTiming(true);
+    } else if (roundState === 'ready' || roundState === 'holding') {
+      stopTicking();
+      roundState = 'stopped';
+      setCardState('stopped');
+      setStatus('Ready for next set');
+      saveRecord(currentLetters.join(''), mode, null, true);
+    }
+  }
+
+  el.dontRememberBtn.addEventListener('click', (e) => { e.stopPropagation(); revealAnswer(); });
+  el.skipBtn.addEventListener('click', (e) => { e.stopPropagation(); newRound(); });
+
+  // ---------- input events (keyboard + touch) ----------
+  
+  // KEYBOARD
+  document.addEventListener('keydown', (e) => {
+    if (!el.sections.trainer.classList.contains('active')) return;
+    if (e.repeat) { if (e.code === 'Space') e.preventDefault(); return; }
+
+    if (e.code === 'Space') {
+      e.preventDefault();
+      if (roundState === 'timing') { stopTiming(false); return; }
+      startHold();
+      return;
+    }
+    if (roundState === 'timing') stopTiming(false);
+  });
+
+  document.addEventListener('keyup', (e) => {
+    if (!el.sections.trainer.classList.contains('active')) return;
+    if (e.code === 'Space') {
+      e.preventDefault();
+      startTiming();
+    }
+  });
+
+  // TOUCH / MOUSE (for letterCard interactions)
+  el.letterCard.addEventListener('touchstart', (e) => {
+    if (!el.sections.trainer.classList.contains('active')) return;
+    e.preventDefault(); 
+    if (roundState === 'timing') {
+      stopTiming(false);
+    } else {
+      startHold();
+    }
+  }, { passive: false });
+
+  el.letterCard.addEventListener('touchend', (e) => {
+    if (!el.sections.trainer.classList.contains('active')) return;
+    e.preventDefault();
+    if (roundState === 'holding') {
+      startTiming();
+    }
+  }, { passive: false });
+
+  // Global screen touch listener to trap/stop timing run when clicking background space on portable displays
+  document.addEventListener('touchstart', (e) => {
+    if (!el.sections.trainer.classList.contains('active')) return;
+    // Don't intercept clicks dedicated explicitly to settings toggles or functional application buttons
+    if (e.target.closest('button') || e.target.closest('input') || e.target.closest('label') || e.target.closest('nav')) return;
+    
+    if (roundState === 'timing') {
+      e.preventDefault();
+      stopTiming(false);
+    }
+  }, { passive: false });
+
+
+  // ---------- cube rendering ----------
+  function buildCellIndexMaps(){
+    return {
+      edge: {'0,1':0, '1,2':1, '2,1':2, '1,0':3},
+      corner: {'0,0':0, '0,2':1, '2,2':2, '2,0':3}
+    };
+  }
+  const IDX_MAPS = buildCellIndexMaps();
+
+  function renderCube(){
+    el.cubeWrap.style.display = showCube ? 'flex' : 'none';
+    if (!showCube) return;
+    el.cubeNet.innerHTML = '';
+
+    FACE_ORDER.forEach((face, faceIdx) => {
+      const origin = FACE_ORIGIN[face];
+      for (let r = 0; r < 3; r++){
+        for (let c = 0; c < 3; c++){
+          const div = document.createElement('div');
+          div.style.gridRow = origin.r + r + 1;
+          div.style.gridColumn = origin.c + c + 1;
+          div.style.background = FACE_COLOR[face];
+          div.classList.add('cell');
+
+          const isCenter = (r === 1 && c === 1);
+          if (isCenter){
+            div.classList.add('center');
+            div.textContent = FACE_LABEL[face];
+          } else {
+            const key = r + ',' + c;
+            let letter = null, cellType = null;
+            if (IDX_MAPS.edge[key] !== undefined && mode === 'edge'){
+              letter = ALPHABET[faceIdx*4 + IDX_MAPS.edge[key]];
+              cellType = 'edge';
+            } else if (IDX_MAPS.corner[key] !== undefined && mode === 'corner'){
+              letter = ALPHABET[faceIdx*4 + IDX_MAPS.corner[key]];
+              cellType = 'corner';
+            }
+            if (letter){
+              div.textContent = letter;
+              const isBuffer = (cellType === 'edge' && EDGE_BUFFERS.includes(letter)) ||
+                                (cellType === 'corner' && CORNER_BUFFERS.includes(letter));
+              if (isBuffer) div.classList.add('buffer-cell');
+              
+              if (currentLetters.includes(letter) && cellType === mode){
+                div.classList.add('target');
+              }
+            } else {
+              div.classList.add('empty');
+            }
+          }
+          el.cubeNet.appendChild(div);
+        }
+      }
+    });
+  }
+
+  // ---------- firebase (REST) ----------
+  function saveRecord(letter, type, seconds, gaveUp){
+    const record = {
+      letter, type,
+      time: seconds === null ? null : Math.round(seconds * 100) / 100,
+      gaveUp: !!gaveUp,
+      ts: Date.now()
+    };
+    fetch(RECORDS_PATH, {method:'POST', body: JSON.stringify(record)})
+      .then(r => { if (!r.ok) throw new Error('write failed'); return r.json(); })
+      .then(res => { history[res.name] = record; updateConn(true); renderHistoryIfActive(); })
+      .catch(() => { updateConn(false); showToast('Could not save data to server.'); });
+  }
+
+  function loadHistory(){
+    fetch(RECORDS_PATH)
+      .then(r => { if (!r.ok) throw new Error('read failed'); return r.json(); })
+      .then(data => { history = data || {}; updateConn(true); renderHistoryIfActive(); })
+      .catch(() => { updateConn(false); });
+  }
+
+  function deleteRecord(id){
+    fetch(DB_URL + '/records/' + id + '.json', {method:'DELETE'})
+      .then(r => { if (!r.ok) throw new Error('delete failed'); delete history[id]; renderHistory(); })
+      .catch(() => showToast('Could not delete that record'));
+  }
+
+  function deleteAll(){
+    fetch(RECORDS_PATH, {method:'DELETE'})
+      .then(r => { if (!r.ok) throw new Error('delete failed'); history = {}; renderHistory(); showToast('All sync logs cleared'); })
+      .catch(() => showToast('Could not clear remote history'));
+  }
+
+  function updateConn(ok){
+    connOk = ok;
+    el.connDot.className = 'conn-dot ' + (ok ? 'ok' : 'err');
+    el.connText.textContent = ok
+      ? 'Connected to Firebase instance. Synchronization active.'
+      : "Database connection failed. Sync suspended.";
+  }
+
+  // ---------- history rendering ----------
+  function renderHistoryIfActive(){
+    if (el.sections.history.classList.contains('active')) renderHistory();
+  }
+
+  function renderHistory(){
+    const rows = Object.entries(history)
+      .sort((a,b) => (b[1].ts||0) - (a[1].ts||0));
+
+    el.statCount.textContent = rows.length;
+    const timed = rows.filter(([,r]) => typeof r.time === 'number');
+    if (timed.length){
+      const avg = timed.reduce((s,[,r]) => s + r.time, 0) / timed.length;
+      const best = Math.min(...timed.map(([,r]) => r.time));
+      el.statAvg.textContent = avg.toFixed(2) + 's';
+      el.statBest.textContent = best.toFixed(2) + 's';
+    } else {
+      el.statAvg.textContent = '–';
+      el.statBest.textContent = '–';
+    }
+
+    if (!rows.length){
+      el.historyTableWrap.innerHTML = '<div class="empty-state">No attempts yet — go do a few reps.</div>';
+      return;
+    }
+
+    let html = '<table><thead><tr><th>Letter(s)</th><th>Type</th><th>Time</th><th>When</th><th></th></tr></thead><tbody>';
+    rows.forEach(([id, r]) => {
+      const d = new Date(r.ts);
+      const when = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+      const timeStr = r.gaveUp ? (typeof r.time === 'number' ? r.time.toFixed(2) + 's (skip)' : 'skipped')
+                                : (typeof r.time === 'number' ? r.time.toFixed(2) + 's' : '–');
+      html += '<tr>' +
+        '<td class="letter-cell">' + r.letter + '</td>' +
+        '<td><span class="tag ' + r.type + '">' + r.type + '</span></td>' +
+        '<td class="time-cell">' + timeStr + '</td>' +
+        '<td class="time-cell">' + when + '</td>' +
+        '<td><button class="del-btn" data-id="' + id + '" title="Delete">✕</button></td>' +
+        '</tr>';
+    });
+    html += '</tbody></table>';
+    el.historyTableWrap.innerHTML = html;
+
+    el.historyTableWrap.querySelectorAll('.del-btn').forEach(btn => {
+      btn.addEventListener('click', () => deleteRecord(btn.dataset.id));
+    });
+  }
+
+  el.clearAllBtn.addEventListener('click', () => {
+    if (!Object.keys(history).length) return;
+    if (confirm('Permanently delete all saved logs? This step cannot be undone.')) deleteAll();
+  });
+
+  // ---------- toast ----------
+  let toastTimer = null;
+  function showToast(msg){
+    el.toast.textContent = msg;
+    el.toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.toast.classList.remove('show'), 2600);
+  }
+
+  // ---------- init ----------
+  newRound();
+  loadHistory();
+})();
+</script>
+</body>
+</html>
