@@ -590,6 +590,7 @@
       : (mode === 'edge' ? currentEdges.join('') : currentCorners.join(''));
       
     saveRecord(savedLabel, mode, elapsed, gaveUp);
+    newRound();
   }
 
   function revealAnswer(){
