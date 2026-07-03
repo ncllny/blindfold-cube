@@ -335,16 +335,15 @@
   <section id="history">
     <div class="panel">
       <div class="stats-row">
-        <div class="stat"><div class="n" id="statCount">0</div><div class="l">Attempts</div></div>
-        <div class="stat"><div class="n" id="statAvg">–</div><div class="l">Avg time</div></div>
-        <div class="stat"><div class="n" id="statBest">–</div><div class="l">Best time</div></div>
+        <div class="stat"><div class="n" id="statCount">0</div><div class="l">Total Attempts</div></div>
+        <div class="stat"><div class="n" id="statEdgeAvg">–</div><div class="l">Edge Avg</div></div>
+        <div class="stat"><div class="n" id="statEdgeBest">–</div><div class="l">Edge Best</div></div>
+        <div class="stat"><div class="n" id="statCornerAvg">–</div><div class="l">Corner Avg</div></div>
+        <div class="stat"><div class="n" id="statCornerBest">–</div><div class="l">Corner Best</div></div>
       </div>
       <div class="row between" style="margin-bottom:12px;">
-        <strong style="font-size:14px;">Recent attempts</strong>
+        <strong style="font-size:14px;">History Database Management</strong>
         <button class="btn warn" id="clearAllBtn" style="padding:6px 12px;font-size:12px;">Clear all logs</button>
-      </div>
-      <div id="historyTableWrap">
-        <div class="empty-state">No attempts yet — go do a few reps.</div>
       </div>
     </div>
   </section>
@@ -421,10 +420,11 @@
     answerMovesContainer: document.getElementById('answerMovesContainer'),
     dontRememberBtn: document.getElementById('dontRememberBtn'),
     skipBtn: document.getElementById('skipBtn'),
-    historyTableWrap: document.getElementById('historyTableWrap'),
     statCount: document.getElementById('statCount'),
-    statAvg: document.getElementById('statAvg'),
-    statBest: document.getElementById('statBest'),
+    statEdgeAvg: document.getElementById('statEdgeAvg'),
+    statEdgeBest: document.getElementById('statEdgeBest'),
+    statCornerAvg: document.getElementById('statCornerAvg'),
+    statCornerBest: document.getElementById('statCornerBest'),
     clearAllBtn: document.getElementById('clearAllBtn'),
     connDot: document.getElementById('connDot'),
     connText: document.getElementById('connText'),
@@ -759,12 +759,6 @@
       .catch(() => { updateConn(false); });
   }
 
-  function deleteRecord(id){
-    fetch(DB_URL + '/records/' + id + '.json', {method:'DELETE'})
-      .then(r => { if (!r.ok) throw new Error('delete failed'); delete history[id]; renderHistory(); })
-      .catch(() => showToast('Could not delete that record'));
-  }
-
   function deleteAll(){
     fetch(RECORDS_PATH, {method:'DELETE'})
       .then(r => { if (!r.ok) throw new Error('delete failed'); history = {}; renderHistory(); showToast('All sync logs cleared'); })
@@ -784,40 +778,28 @@
   function renderHistory(){
     const rows = Object.entries(history).sort((a,b) => (b[1].ts||0) - (a[1].ts||0));
     el.statCount.textContent = rows.length;
-    const timed = rows.filter(([,r]) => typeof r.time === 'number');
-    if (timed.length){
-      const avg = timed.reduce((s,[,r]) => s + r.time, 0) / timed.length;
-      const best = Math.min(...timed.map(([,r]) => r.time));
-      el.statAvg.textContent = avg.toFixed(2) + 's';
-      el.statBest.textContent = best.toFixed(2) + 's';
+
+    // Filter timed runs by specific mode types
+    const edgeTimed = rows.filter(([,r]) => r.type === 'edge' && typeof r.time === 'number');
+    const cornerTimed = rows.filter(([,r]) => r.type === 'corner' && typeof r.time === 'number');
+
+    if (edgeTimed.length){
+      const avg = edgeTimed.reduce((s,[,r]) => s + r.time, 0) / edgeTimed.length;
+      const best = Math.min(...edgeTimed.map(([,r]) => r.time));
+      el.statEdgeAvg.textContent = avg.toFixed(2) + 's';
+      el.statEdgeBest.textContent = best.toFixed(2) + 's';
     } else {
-      el.statAvg.textContent = '–'; el.statBest.textContent = '–';
+      el.statEdgeAvg.textContent = '–'; el.statEdgeBest.textContent = '–';
     }
 
-    if (!rows.length){
-      el.historyTableWrap.innerHTML = '<div class="empty-state">No attempts yet — go do a few reps.</div>';
-      return;
+    if (cornerTimed.length){
+      const avg = cornerTimed.reduce((s,[,r]) => s + r.time, 0) / cornerTimed.length;
+      const best = Math.min(...cornerTimed.map(([,r]) => r.time));
+      el.statCornerAvg.textContent = avg.toFixed(2) + 's';
+      el.statCornerBest.textContent = best.toFixed(2) + 's';
+    } else {
+      el.statCornerAvg.textContent = '–'; el.statCornerBest.textContent = '–';
     }
-
-    let html = '<table><thead><tr><th>Letter(s)</th><th>Type</th><th>Time</th><th>When</th><th></th></tr></thead><tbody>';
-    rows.forEach(([id, r]) => {
-      const d = new Date(r.ts);
-      const when = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-      const timeStr = r.gaveUp ? (typeof r.time === 'number' ? r.time.toFixed(2) + 's (skip)' : 'skipped') : (typeof r.time === 'number' ? r.time.toFixed(2) + 's' : '–');
-      html += '<tr>' +
-        '<td class="letter-cell">' + r.letter + '</td>' +
-        '<td><span class="tag ' + r.type + '">' + r.type + '</span></td>' +
-        '<td class="time-cell">' + timeStr + '</td>' +
-        '<td class="time-cell">' + when + '</td>' +
-        '<td><button class="del-btn" data-id="' + id + '" title="Delete">✕</button></td>' +
-        '</tr>';
-    });
-    html += '</tbody></table>';
-    el.historyTableWrap.innerHTML = html;
-
-    el.historyTableWrap.querySelectorAll('.del-btn').forEach(btn => {
-      btn.addEventListener('click', () => deleteRecord(btn.dataset.id));
-    });
   }
 
   el.clearAllBtn.addEventListener('click', () => {
