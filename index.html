@@ -62,8 +62,11 @@
     color:var(--muted);
     display:flex;
     align-items:center;
+    justify-content:space-between;
     margin-bottom:22px;
+    gap: 12px;
   }
+  .db-status-bar .info-side{display:flex;align-items:center;}
 
   section{display:none;}
   section.active{display:block;}
@@ -163,6 +166,7 @@
   }
   .btn:hover{border-color:var(--muted-2);}
   .btn.ghost{background:transparent;}
+  .btn.mini{padding:3px 8px;font-size:11px;border-radius:5px;}
   .btn.warn{color:#ffb4b4;border-color:rgba(255,120,120,0.3);}
   .btn.warn:hover{background:rgba(255,80,80,0.08);}
 
@@ -237,8 +241,11 @@
   </header>
 
   <div class="db-status-bar">
-    <span class="conn-dot" id="connDot"></span>
-    <span id="connText">Connecting to database...</span>
+    <div class="info-side">
+      <span class="conn-dot" id="connDot"></span>
+      <span id="connText">Connecting to database...</span>
+    </div>
+    <button class="btn mini ghost" id="undoBtn" style="display:none;">Undo Last Solve</button>
   </div>
 
   <!-- TRAINER -->
@@ -320,8 +327,7 @@
         </div>
 
         <div class="hint">
-          Hold <kbd>Space</kbd> (or tap and hold card area) while you look at the letters, release it to start the clock,
-          then press <kbd>any key</kbd> (or tap anywhere) to stop.
+          Hold <kbd>Space</kbd> (or tap and hold card area). Release to start clock, press <kbd>any key</kbd> to stop. Press <kbd>Esc</kbd> while holding to cancel.
         </div>
       </div>
     </div>
@@ -388,6 +394,7 @@
   let tickHandle = null;
   let history = {};                
   let connOk = null;
+  let lastSavedKey = null; // Track latest element reference for immediate undo operations
 
   // ---------- elements ----------
   const el = {
@@ -427,6 +434,7 @@
     connDot: document.getElementById('connDot'),
     connText: document.getElementById('connText'),
     toast: document.getElementById('toast'),
+    undoBtn: document.getElementById('undoBtn')
   };
 
   // ---------- tabs ----------
@@ -563,7 +571,14 @@
     if (roundState === 'stopped') { newRound(); }
     roundState = 'holding';
     setCardState('holding');
-    setStatus('Release to start the clock');
+    setStatus('Release to start the clock (Press <b>Esc</b> to Cancel)');
+  }
+
+  function cancelHold(){
+    if (roundState !== 'holding') return;
+    roundState = 'ready';
+    setCardState('ready');
+    setStatus('Preparation cancelled. Hold <b>Space</b> to try again');
   }
 
   function startTiming(){
@@ -601,7 +616,6 @@
       ? `E:${currentEdges.join('')||'-'} C:${currentCorners.join('')||'-'}`
       : (mode === 'edge' ? currentEdges.join('') : currentCorners.join(''));
       
-    // Determine target swap count to calculate exact metrics per unit character
     let count = mode === 'mixed' ? (currentEdges.length + currentCorners.length) : charLength;
     saveRecord(savedLabel, mode, elapsed, gaveUp, count);
     newRound();
@@ -670,6 +684,15 @@
   document.addEventListener('keydown', (e) => {
     if (!el.sections.trainer.classList.contains('active')) return;
     if (e.repeat) { if (e.code === 'Space') e.preventDefault(); return; }
+    
+    if (e.code === 'Escape') {
+      if (roundState === 'holding') {
+        e.preventDefault();
+        cancelHold();
+      }
+      return;
+    }
+    
     if (e.code === 'Space') {
       e.preventDefault();
       if (roundState === 'timing') { stopTiming(false); return; }
@@ -681,7 +704,10 @@
 
   document.addEventListener('keyup', (e) => {
     if (!el.sections.trainer.classList.contains('active')) return;
-    if (e.code === 'Space') { e.preventDefault(); startTiming(); }
+    if (e.code === 'Space') { 
+      e.preventDefault(); 
+      if (roundState === 'holding') startTiming(); 
+    }
   });
 
   el.letterCard.addEventListener('touchstart', (e) => {
@@ -759,25 +785,66 @@
       letter, type,
       time: seconds === null ? null : Math.round(seconds * 100) / 100,
       gaveUp: !!gaveUp,
-      count: count || 1, // Store the exact number of characters to support metrics per swap math
+      count: count || 1, 
       ts: Date.now()
     };
     fetch(RECORDS_PATH, {method:'POST', body: JSON.stringify(record)})
       .then(r => { if (!r.ok) throw new Error('write failed'); return r.json(); })
-      .then(res => { history[res.name] = record; updateConn(true); renderHistoryIfActive(); })
+      .then(res => { 
+        history[res.name] = record; 
+        lastSavedKey = res.name; // Remember key target for dynamic execution of an undo command
+        el.undoBtn.style.display = 'inline-block';
+        updateConn(true); 
+        renderHistoryIfActive(); 
+      })
       .catch(() => { updateConn(false); showToast('Could not save data to server.'); });
   }
+
+  function undoLastSolve(){
+    if (!lastSavedKey) return;
+    const deleteTargetUrl = `${DB_URL}/records/${lastSavedKey}.json`;
+    fetch(deleteTargetUrl, { method: 'DELETE' })
+      .then(r => {
+        if (!r.ok) throw new Error('Delete targeted item failed');
+        delete history[lastSavedKey];
+        lastSavedKey = null;
+        el.undoBtn.style.display = 'none';
+        showToast('Most recent solve undone and deleted.');
+        renderHistoryIfActive();
+      })
+      .catch(() => showToast('Could not undo remote history element.'));
+  }
+
+  el.undoBtn.addEventListener('click', undoLastSolve);
 
   function loadHistory(){
     fetch(RECORDS_PATH)
       .then(r => { if (!r.ok) throw new Error('read failed'); return r.json(); })
-      .then(data => { history = data || {}; updateConn(true); renderHistoryIfActive(); })
+      .then(data => { 
+        history = data || {}; 
+        updateConn(true); 
+        renderHistoryIfActive(); 
+        
+        // Find most recent item key to allow an undo operation right after reload
+        const items = Object.entries(history).sort((a,b) => (b[1].ts||0) - (a[1].ts||0));
+        if(items.length > 0) {
+          lastSavedKey = items[0][0];
+          el.undoBtn.style.display = 'inline-block';
+        }
+      })
       .catch(() => { updateConn(false); });
   }
 
   function deleteAll(){
     fetch(RECORDS_PATH, {method:'DELETE'})
-      .then(r => { if (!r.ok) throw new Error('delete failed'); history = {}; renderHistory(); showToast('All sync logs cleared'); })
+      .then(r => { 
+        if (!r.ok) throw new Error('delete failed'); 
+        history = {}; 
+        lastSavedKey = null;
+        el.undoBtn.style.display = 'none';
+        renderHistory(); 
+        showToast('All sync logs cleared'); 
+      })
       .catch(() => showToast('Could not clear remote history'));
   }
 
@@ -799,12 +866,10 @@
     const cornerTimed = rows.filter(([,r]) => r.type === 'corner' && typeof r.time === 'number');
 
     if (edgeTimed.length){
-      // Calculate average per single swap (Total Time Sum / Total Count Sum)
       const totalTime = edgeTimed.reduce((s,[,r]) => s + r.time, 0);
       const totalCount = edgeTimed.reduce((s,[,r]) => s + (r.count || 1), 0);
       const avgPerSwap = totalTime / totalCount;
       
-      // Best score is determined based on single swap average performance ($time \div count$)
       const bestPerSwap = Math.min(...edgeTimed.map(([,r]) => r.time / (r.count || 1)));
       
       el.statEdgeAvg.textContent = avgPerSwap.toFixed(2) + 's';
