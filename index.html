@@ -140,6 +140,7 @@
   }
   .prev-attempt-box .lbl { color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
   .prev-attempt-box .val { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--muted); }
+  .prev-attempt-box .val .time-bracket { color: var(--gold); margin-left: 6px; }
 
   .status-line{font-size:13px;color:var(--muted);font-weight:500;min-height:18px;text-align:center;}
   .status-line b{color:var(--text);}
@@ -394,7 +395,7 @@
   let tickHandle = null;
   let history = {};                
   let connOk = null;
-  let lastSavedKey = null; // Track latest element reference for immediate undo operations
+  let lastSavedKey = null;
 
   // ---------- elements ----------
   const el = {
@@ -504,21 +505,15 @@
     return selected;
   }
 
+  function formatPrevAttempt(label, timeVal, gaveUp) {
+    if (!label || label === "—") return "—";
+    let suffix = gaveUp ? `<span class="time-bracket">(DNF)</span>` : `<span class="time-bracket">(${Number(timeVal).toFixed(2)}s)</span>`;
+    return `${label} ${suffix}`;
+  }
+
   function newRound(){
     stopTicking();
     el.answerBox.classList.remove('show');
-    
-    if (roundState === 'stopped' || currentEdges.length > 0 || currentCorners.length > 0) {
-      if (mode === 'mixed') {
-        let edgeString = currentEdges.length > 0 ? currentEdges.join('') : '-';
-        let cornerString = currentCorners.length > 0 ? currentCorners.join('') : '-';
-        lastAttemptLabel = `Edges: ${edgeString} / Corners: ${cornerString}`;
-      } else {
-        lastAttemptLabel = mode === 'edge' ? currentEdges.join('') : currentCorners.join('');
-      }
-      if(!lastAttemptLabel) lastAttemptLabel = "—";
-      el.prevAttemptVal.textContent = lastAttemptLabel;
-    }
 
     if (mode === 'mixed') {
       currentEdges = generateNoRepeatSequence(EDGE_POOL, edgeLength);
@@ -612,12 +607,14 @@
       ? 'Recorded as <b>skipped</b> — hold space or target card to reset'
       : 'Time <b>' + elapsed.toFixed(2) + 's</b> — hold space or target card to reset');
     
-    let savedLabel = mode === 'mixed' 
-      ? `E:${currentEdges.join('')||'-'} C:${currentCorners.join('')||'-'}`
+    let baseLabel = mode === 'mixed' 
+      ? `Edges: ${currentEdges.join('')||'-'} / Corners: ${currentCorners.join('')||'-'}`
       : (mode === 'edge' ? currentEdges.join('') : currentCorners.join(''));
+    
+    el.prevAttemptVal.innerHTML = formatPrevAttempt(baseLabel, elapsed, gaveUp);
       
     let count = mode === 'mixed' ? (currentEdges.length + currentCorners.length) : charLength;
-    saveRecord(savedLabel, mode, elapsed, gaveUp, count);
+    saveRecord(baseLabel, mode, elapsed, gaveUp, count);
     newRound();
   }
 
@@ -669,11 +666,14 @@
       roundState = 'stopped';
       setCardState('stopped');
       setStatus('Ready for next set');
-      let savedLabel = mode === 'mixed' 
-        ? `E:${currentEdges.join('')||'-'} C:${currentCorners.join('')||'-'}`
+      
+      let baseLabel = mode === 'mixed' 
+        ? `Edges: ${currentEdges.join('')||'-'} / Corners: ${currentCorners.join('')||'-'}`
         : (mode === 'edge' ? currentEdges.join('') : currentCorners.join(''));
+        
+      el.prevAttemptVal.innerHTML = formatPrevAttempt(baseLabel, 0, true);
       let count = mode === 'mixed' ? (currentEdges.length + currentCorners.length) : charLength;
-      saveRecord(savedLabel, mode, null, true, count);
+      saveRecord(baseLabel, mode, null, true, count);
     }
   }
 
@@ -792,7 +792,7 @@
       .then(r => { if (!r.ok) throw new Error('write failed'); return r.json(); })
       .then(res => { 
         history[res.name] = record; 
-        lastSavedKey = res.name; // Remember key target for dynamic execution of an undo command
+        lastSavedKey = res.name; 
         el.undoBtn.style.display = 'inline-block';
         updateConn(true); 
         renderHistoryIfActive(); 
@@ -809,6 +809,7 @@
         delete history[lastSavedKey];
         lastSavedKey = null;
         el.undoBtn.style.display = 'none';
+        el.prevAttemptVal.textContent = '—';
         showToast('Most recent solve undone and deleted.');
         renderHistoryIfActive();
       })
@@ -825,11 +826,13 @@
         updateConn(true); 
         renderHistoryIfActive(); 
         
-        // Find most recent item key to allow an undo operation right after reload
         const items = Object.entries(history).sort((a,b) => (b[1].ts||0) - (a[1].ts||0));
         if(items.length > 0) {
           lastSavedKey = items[0][0];
           el.undoBtn.style.display = 'inline-block';
+          
+          let latest = items[0][1];
+          el.prevAttemptVal.innerHTML = formatPrevAttempt(latest.letter, latest.time, latest.gaveUp);
         }
       })
       .catch(() => { updateConn(false); });
@@ -842,6 +845,7 @@
         history = {}; 
         lastSavedKey = null;
         el.undoBtn.style.display = 'none';
+        el.prevAttemptVal.textContent = '—';
         renderHistory(); 
         showToast('All sync logs cleared'); 
       })
